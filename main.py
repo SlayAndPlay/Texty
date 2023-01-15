@@ -1,6 +1,8 @@
 from tkinter import * 
 from tkinter.ttk import *
 from tkinter import font, colorchooser
+from tkinter import filedialog
+import os
 
 # Functionality
 fontSize=12
@@ -43,11 +45,20 @@ def strikethru_text():
     if text_property['overstrike'] == 1:
         textarea.config(font=(fontStyle,fontSize))
         
+def new_file():
+    textarea.delete(0.0,END)
+    
+def open_file():
+    url=filedialog.askopenfilename(initialdir=os.getcwd,title="Select File",filetypes=(('Text File','txt'),('All Files','*.*')))
+    if url !='':
+        data=open(url,'r')   
+        textarea.insert(0.0,data.read())
+    root.title("Texty" +" - "+ os.path.basename(url))
 def color_select():
     color=colorchooser.askcolor()
     textarea.config(fg=color[1])
 
-def align_right():
+def align_right(): 
     data=textarea.get(0.0,END)
     textarea.tag_config('right',justify=RIGHT)
     textarea.delete(0.0,END)
@@ -79,9 +90,9 @@ root.config(menu=menubar)
 filemenu = Menu(menubar, tearoff=0)
 menubar.add_cascade(label="File", menu=filemenu)
 newImage=PhotoImage(file="new.png")
-filemenu.add_command(label="New",accelerator="Command+N",image=newImage,compound=LEFT)
+filemenu.add_command(label="New",accelerator="Command+N",image=newImage,compound=LEFT,command=new_file)
 openImage=PhotoImage(file="open.png")
-filemenu.add_command(label="Open",accelerator="Command+O",image=openImage,compound=LEFT)
+filemenu.add_command(label="Open",accelerator="Command+O",image=openImage,compound=LEFT,command=open_file)
 saveImage=PhotoImage(file="save.png")
 filemenu.add_command(label="Save",accelerator="Command+S",image=saveImage,compound=LEFT)
 save_asImage=PhotoImage(file="save_as.png")
