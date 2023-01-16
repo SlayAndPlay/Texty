@@ -141,11 +141,71 @@ def align_left():
     textarea.tag_config('left',justify=LEFT)
     textarea.delete(0.0,END)
     textarea.insert(INSERT, data, 'left')
+     
+def find():
+    
+    # functionality
+    
+    def find_words():
+        textarea.tag_remove('match',1.0,END)
+        start_pos='1.0'
+        word=findEntryField.get()
+        if word:
+            while 1: 
+                
+                start_pos=textarea.search(word,start_pos,stopindex=END)
+                if not start_pos:
+                    break
+                end_pos=f'{start_pos}+{len(word)}c'
+                textarea.tag_add('match',start_pos,end_pos)
+            
+                textarea.tag_config('match',foreground="red",background="yellow")
+                start_pos=end_pos
+    
+    def replace_text():
+        word=findEntryField.get()
+        replacWord=replaceEntryField.get()
+        content=textarea.get(1.0,END)
+        new_content=content.replace(word,replacWord)
+        textarea.delete(1.0,END)
+        textarea.insert(1.0,new_content)
+    
+    # GUI
+    
+    root1=Toplevel()
+    
+    root1.title("Find")
+    root1.geometry("450x250+650+400")
+    root1.resizable(0,0)
+    
+    labelFrame=LabelFrame(root1,text="Find/Replace")
+    labelFrame.pack(pady=40)
+    
+    findLabel=Label(labelFrame,text="Find")
+    findLabel.grid(row=0,column=0,padx=5,pady=5)
+    findEntryField=Entry(labelFrame)
+    findEntryField.grid(row=0,column=1,padx=5,pady=5)
+    
+    replaceLabel=Label(labelFrame,text="Replace")
+    replaceLabel.grid(row=1,column=0,padx=5,pady=5)   
+    replaceEntryField=Entry(labelFrame)
+    replaceEntryField.grid(row=1,column=1,padx=5,pady=5)
+    
+    findButton=Button(labelFrame,text="FIND",command=find_words)
+    replaceButton=Button(labelFrame, text="REPLACE",command=replace_text)
+    findButton.grid(row=2,column=0,padx=5,pady=5)
+    replaceButton.grid(row=2,column=2,padx=5,pady=5)
+    def doSomething():
+        textarea.tag_remove('march',1.0,END)
+        root1.destroy
+    root1.protocol('WM_DELETE_WINDOW',doSomething)
+    root1.mainloop()
+        
 
 # Window Settings
 root=Tk()
 root.title("Texty")
-root.geometry('1200x720+250+200')
+root.geometry('1200x720+270+200')
 menubar = Menu(root)
 root.config(menu=menubar)
 
@@ -167,47 +227,6 @@ filemenu.add_separator()
 exitImage=PhotoImage(file="exit.png")
 filemenu.add_command(label="Exit",accelerator="Command+Q",image=exitImage,compound=LEFT,command=exit_window)
 
-# edit menu
-editmenu=Menu(menubar, tearoff=0)
-menubar.add_cascade(label="Edit", menu=editmenu)
-cutImage=PhotoImage(file="cut.png")
-editmenu.add_command(label="Cut", accelerator="Command+X",image=cutImage,compound=LEFT)
-copyImage=PhotoImage(file="copy.png")
-editmenu.add_command(label="Copy", accelerator="Command+C",image=copyImage,compound=LEFT)
-pasteImage=PhotoImage(file="paste.png")
-editmenu.add_command(label="Paste", accelerator="Command+V",image=pasteImage,compound=LEFT)
-clearImage=PhotoImage(file="clear_all.png")
-editmenu.add_command(label="Clear", accelerator="Command+Option+X",image=clearImage,compound=LEFT)
-findImage=PhotoImage(file="find.png")
-editmenu.add_command(label="Find", accelerator="Command+F",image=findImage,compound=LEFT)
-
-# view menu
-show_toolbar=BooleanVar()
-show_statusbar=BooleanVar()
-statusbarImage=PhotoImage(file="status_bar.png")
-toolbarImage=PhotoImage(file="tool_bar.png")
-viewmenu=Menu(menubar, tearoff=0)
-menubar.add_cascade(label="View", menu=viewmenu)
-viewmenu.add_checkbutton(label="Tool Bar", variable=show_toolbar, onvalue=1, offvalue=0, image=toolbarImage,compound=LEFT)
-viewmenu.add_checkbutton(label="Status Bar", variable=show_statusbar, onvalue=1, offvalue=0, image=statusbarImage,compound=LEFT)
-viewmenu.add_command(label="Minimize",accelerator="Command+W",command=minimize_window)
-
-# themes menu
-themesmenu=Menu(menubar,tearoff=0)
-lightdImage=PhotoImage(file="light_default.png")
-lightpImage=PhotoImage(file="light_plus.png")
-darkImage=PhotoImage(file="dark.png")
-pinkImage=PhotoImage(file="red.png")
-monokaiImage=PhotoImage(file="monokai.png")
-nightblueImage=PhotoImage(file="night_blue.png")
-menubar.add_cascade(label="Themes",menu=themesmenu)
-theme_choice=StringVar()
-themesmenu.add_radiobutton(label="Light Default", image=lightdImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Light Plus", image=lightpImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Dark", image=darkImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Pink", image=pinkImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Monokai", image=monokaiImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Night Blue", image=nightblueImage, variable=theme_choice, compound=LEFT)
 
 # toolbar
 
@@ -274,6 +293,49 @@ status_bar.pack(side=BOTTOM)
 
 
 textarea.bind('<<Modified>>',statusbar_state)
+
+
+# edit menu
+editmenu=Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Edit", menu=editmenu)
+cutImage=PhotoImage(file="cut.png")
+editmenu.add_command(label="Cut", accelerator="Command+x",image=cutImage,compound=LEFT,command=lambda :textarea.event_generate('<Command X>'))
+copyImage=PhotoImage(file="copy.png")
+editmenu.add_command(label="Copy", accelerator="Command+C",image=copyImage,compound=LEFT,command=lambda :textarea.event_generate('<Command C>'))
+pasteImage=PhotoImage(file="paste.png")
+editmenu.add_command(label="Paste", accelerator="Command+V",image=pasteImage,compound=LEFT,command=lambda :textarea.event_generate('<Command V>'))
+clearImage=PhotoImage(file="clear_all.png")
+editmenu.add_command(label="Clear", accelerator="Command+Option+X",image=clearImage,compound=LEFT,command=lambda :textarea.delete(0.0,END))
+findImage=PhotoImage(file="find.png")
+editmenu.add_command(label="Find", accelerator="Command+F",image=findImage,compound=LEFT,command=find)
+
+# view menu
+show_toolbar=BooleanVar()
+show_statusbar=BooleanVar()
+statusbarImage=PhotoImage(file="status_bar.png")
+toolbarImage=PhotoImage(file="tool_bar.png")
+viewmenu=Menu(menubar, tearoff=0)
+menubar.add_cascade(label="View", menu=viewmenu)
+viewmenu.add_checkbutton(label="Tool Bar", variable=show_toolbar, onvalue=1, offvalue=0, image=toolbarImage,compound=LEFT)
+viewmenu.add_checkbutton(label="Status Bar", variable=show_statusbar, onvalue=1, offvalue=0, image=statusbarImage,compound=LEFT)
+viewmenu.add_command(label="Minimize",accelerator="Command+W",command=minimize_window)
+
+# themes menu
+themesmenu=Menu(menubar,tearoff=0)
+lightdImage=PhotoImage(file="light_default.png")
+lightpImage=PhotoImage(file="light_plus.png")
+darkImage=PhotoImage(file="dark.png")
+pinkImage=PhotoImage(file="red.png")
+monokaiImage=PhotoImage(file="monokai.png")
+nightblueImage=PhotoImage(file="night_blue.png")
+menubar.add_cascade(label="Themes",menu=themesmenu)
+theme_choice=StringVar()
+themesmenu.add_radiobutton(label="Light Default", image=lightdImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Light Plus", image=lightpImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Dark", image=darkImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Pink", image=pinkImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Monokai", image=monokaiImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Night Blue", image=nightblueImage, variable=theme_choice, compound=LEFT)
 
 
 root.mainloop() 
