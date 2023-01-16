@@ -2,11 +2,22 @@ from tkinter import *
 from tkinter.ttk import *
 from tkinter import font, colorchooser
 from tkinter import filedialog
+from tkinter import messagebox
 import os
 
 # Functionality
+
+def statusbar_state(event):
+    if textarea.edit_modified():
+        word_len=len(textarea.get(0.0,END).split())                     # Split returns as list.
+        characters=len(textarea.get(0.0,'end-1c').replace(' ',''))      # Len will return count of items.
+        status_bar.config(text=f"Characters: {characters} | Word Count: {word_len}")
+    textarea.edit_modified(0)
+
+
 fontSize=12
 fontStyle="Arial"
+url=''
 def font_style(event):
     global fontStyle
     fontStyle = font_family_var.get()
@@ -46,14 +57,69 @@ def strikethru_text():
         textarea.config(font=(fontStyle,fontSize))
         
 def new_file():
+    global url
+    url=''
     textarea.delete(0.0,END)
     
 def open_file():
+    global url
     url=filedialog.askopenfilename(initialdir=os.getcwd,title="Select File",filetypes=(('Text File','txt'),('All Files','*.*')))
     if url !='':
         data=open(url,'r')   
         textarea.insert(0.0,data.read())
     root.title("Texty" +" - "+ os.path.basename(url))
+    
+def save_file():
+    if url =='':
+        save_url=filedialog.asksaveasfile(mode='w',defaultextension='.txt',filetypes=(('Text File','txt'),('All Files','*.*')))
+        content=textarea.get(0.0,END)
+        save_url.write(content)
+        save_url.close()
+    else:
+        content=textarea.get(0.0,END)
+        file=open(url,'w')
+        file.write(content)
+        
+def save_as_file():
+    save_url=filedialog.asksaveasfile(mode='w',defaultextension='.txt',filetypes=(('Text File','txt'),('All Files','*.*')))
+    content=textarea.get(0.0,END)
+    save_url.write(content)
+    save_url.close()
+    if url != '':
+        os.remove(url)
+
+def minimize_window():
+    root.wm_state('iconic')
+    
+def exit_window():
+    if textarea.edit_modified():
+        result=messagebox.askyesnocancel("Warning","Do you want to save changes made?")
+        if result:
+            if url!='':
+                # THE COMMANDS BELOW ARE ANOTHER METHOD THAT WORK
+                # content=textarea.get(0.0,END)
+                # file=open(url,'w')
+                # file.write(content)
+                # root.destroy()
+                save_file()
+                root.destroy()
+            else:
+                # THE COMMANDS BELOW ARE ANOTHER METHOD THAT WORK 
+                # content=textarea.get(0.0,END)
+                # save_url=filedialog.asksaveasfile(mode='w',defaultextension='.txt',filetypes=(('Text File','txt'),('All Files','*.*')))
+                # save_url.write(content)
+                # save_url.close()
+                # root.destroy()
+                save_file()
+                root.destroy()
+        elif result==0:
+            root.destroy()
+        else:
+            pass
+    else:
+        root.destroy()
+
+    
 def color_select():
     color=colorchooser.askcolor()
     textarea.config(fg=color[1])
@@ -94,12 +160,12 @@ filemenu.add_command(label="New",accelerator="Command+N",image=newImage,compound
 openImage=PhotoImage(file="open.png")
 filemenu.add_command(label="Open",accelerator="Command+O",image=openImage,compound=LEFT,command=open_file)
 saveImage=PhotoImage(file="save.png")
-filemenu.add_command(label="Save",accelerator="Command+S",image=saveImage,compound=LEFT)
+filemenu.add_command(label="Save",accelerator="Command+S",image=saveImage,compound=LEFT,command=save_file)
 save_asImage=PhotoImage(file="save_as.png")
-filemenu.add_command(label="Save As",accelerator="Command+Option+S",image=save_asImage,compound=LEFT)
+filemenu.add_command(label="Save As",accelerator="Command+Option+S",image=save_asImage,compound=LEFT,command=save_as_file)
 filemenu.add_separator()
 exitImage=PhotoImage(file="exit.png")
-filemenu.add_command(label="Exit",accelerator="Command+Q",image=exitImage,compound=LEFT)
+filemenu.add_command(label="Exit",accelerator="Command+Q",image=exitImage,compound=LEFT,command=exit_window)
 
 # edit menu
 editmenu=Menu(menubar, tearoff=0)
@@ -124,6 +190,7 @@ viewmenu=Menu(menubar, tearoff=0)
 menubar.add_cascade(label="View", menu=viewmenu)
 viewmenu.add_checkbutton(label="Tool Bar", variable=show_toolbar, onvalue=1, offvalue=0, image=toolbarImage,compound=LEFT)
 viewmenu.add_checkbutton(label="Status Bar", variable=show_statusbar, onvalue=1, offvalue=0, image=statusbarImage,compound=LEFT)
+viewmenu.add_command(label="Minimize",accelerator="Command+W",command=minimize_window)
 
 # themes menu
 themesmenu=Menu(menubar,tearoff=0)
@@ -205,6 +272,8 @@ scrollbar.config(command=textarea.yview)
 status_bar=Label(root, text="Status Bar")
 status_bar.pack(side=BOTTOM)
 
+
+textarea.bind('<<Modified>>',statusbar_state)
 
 
 root.mainloop() 
