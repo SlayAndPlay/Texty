@@ -3,7 +3,10 @@ from tkinter.ttk import *
 from tkinter import font, colorchooser
 from tkinter import filedialog
 from tkinter import messagebox
-import os
+import tempfile
+import os, sys, subprocess
+from sh import lp
+
 
 # Functionality
 
@@ -56,12 +59,12 @@ def strikethru_text():
     if text_property['overstrike'] == 1:
         textarea.config(font=(fontStyle,fontSize))
         
-def new_file():
+def new_file(event=None):
     global url
     url=''
     textarea.delete(0.0,END)
     
-def open_file():
+def open_file(event=None):
     global url
     url=filedialog.askopenfilename(initialdir=os.getcwd,title="Select File",filetypes=(('Text File','txt'),('All Files','*.*')))
     if url !='':
@@ -69,29 +72,46 @@ def open_file():
         textarea.insert(0.0,data.read())
     root.title("Texty" +" - "+ os.path.basename(url))
     
-def save_file():
+def save_file(event=None):
     if url =='':
         save_url=filedialog.asksaveasfile(mode='w',defaultextension='.txt',filetypes=(('Text File','txt'),('All Files','*.*')))
-        content=textarea.get(0.0,END)
-        save_url.write(content)
-        save_url.close()
+        if save_url is None:
+            pass
+        else:
+            content=textarea.get(0.0,END)
+            save_url.write(content)
+            save_url.close()
     else:
         content=textarea.get(0.0,END)
         file=open(url,'w')
         file.write(content)
         
-def save_as_file():
+def save_as_file(event=None):
     save_url=filedialog.asksaveasfile(mode='w',defaultextension='.txt',filetypes=(('Text File','txt'),('All Files','*.*')))
-    content=textarea.get(0.0,END)
-    save_url.write(content)
-    save_url.close()
+    if save_url is None:
+        pass
+    else:
+        content=textarea.get(0.0,END)
+        save_url.write(content)
+        save_url.close()
     if url != '':
         os.remove(url)
-
-def minimize_window():
-    root.wm_state('iconic')
+        
+def printsheet(event=None):
+    file=tempfile.mktemp('.txt')
+    open(file,'w').write(textarea.get(1.0,END))
+    if sys.platform=="win32":
+        os.startfile(file,'print')
+    else:
+        open("temp.txt",'w').write(textarea.get(1.0,END))
+        lp("temp.txt")    
     
-def exit_window():
+    
+
+def minimize_window(event=None):
+    root.wm_state('iconic')   
+    
+def exit_window(event=None):
     if textarea.edit_modified():
         result=messagebox.askyesnocancel("Warning","Do you want to save changes made?")
         if result:
@@ -141,6 +161,23 @@ def align_left():
     textarea.tag_config('left',justify=LEFT)
     textarea.delete(0.0,END)
     textarea.insert(INSERT, data, 'left')
+    
+def change_theme(bg_color,fg_color):
+    textarea.config(bg=bg_color,fg=fg_color)
+    
+def toolbarFunc():
+    if show_toolbar.get()==0:
+        tool_bar.pack_forget()
+    if show_toolbar.get()==1:
+        textarea.pack_forget()
+        tool_bar.pack(fill=X)
+        textarea.pack(fill=BOTH,expand=1)
+
+def statusbarFunc():
+    if show_statusbar.get()==0:
+        status_bar.pack_forget()
+    else:
+        status_bar.pack()
      
 def find():
     
@@ -223,6 +260,8 @@ saveImage=PhotoImage(file="save.png")
 filemenu.add_command(label="Save",accelerator="Command+S",image=saveImage,compound=LEFT,command=save_file)
 save_asImage=PhotoImage(file="save_as.png")
 filemenu.add_command(label="Save As",accelerator="Command+Option+S",image=save_asImage,compound=LEFT,command=save_as_file)
+printImage=PhotoImage(file="print.png")
+filemenu.add_command(label="Print",accelerator="Command+P",image=printImage,compound=LEFT,command=printsheet)
 filemenu.add_separator()
 exitImage=PhotoImage(file="exit.png")
 filemenu.add_command(label="Exit",accelerator="Command+Q",image=exitImage,compound=LEFT,command=exit_window)
@@ -304,6 +343,8 @@ copyImage=PhotoImage(file="copy.png")
 editmenu.add_command(label="Copy", accelerator="Command+C",image=copyImage,compound=LEFT,command=lambda :textarea.event_generate('<Command C>'))
 pasteImage=PhotoImage(file="paste.png")
 editmenu.add_command(label="Paste", accelerator="Command+V",image=pasteImage,compound=LEFT,command=lambda :textarea.event_generate('<Command V>'))
+selectImage=PhotoImage(file="select-all.png")
+editmenu.add_command(label="Select All", accelerator="Command+A",image=selectImage,compound=LEFT)
 clearImage=PhotoImage(file="clear_all.png")
 editmenu.add_command(label="Clear", accelerator="Command+Option+X",image=clearImage,compound=LEFT,command=lambda :textarea.delete(0.0,END))
 findImage=PhotoImage(file="find.png")
@@ -316,8 +357,10 @@ statusbarImage=PhotoImage(file="status_bar.png")
 toolbarImage=PhotoImage(file="tool_bar.png")
 viewmenu=Menu(menubar, tearoff=0)
 menubar.add_cascade(label="View", menu=viewmenu)
-viewmenu.add_checkbutton(label="Tool Bar", variable=show_toolbar, onvalue=1, offvalue=0, image=toolbarImage,compound=LEFT)
-viewmenu.add_checkbutton(label="Status Bar", variable=show_statusbar, onvalue=1, offvalue=0, image=statusbarImage,compound=LEFT)
+viewmenu.add_checkbutton(label="Tool Bar", variable=show_toolbar, onvalue=1, offvalue=0, image=toolbarImage,compound=LEFT,command=toolbarFunc)
+show_toolbar.set(1)
+viewmenu.add_checkbutton(label="Status Bar", variable=show_statusbar, onvalue=1, offvalue=0, image=statusbarImage,compound=LEFT,command=statusbarFunc)
+show_statusbar.set(1)
 viewmenu.add_command(label="Minimize",accelerator="Command+W",command=minimize_window)
 
 # themes menu
@@ -330,12 +373,25 @@ monokaiImage=PhotoImage(file="monokai.png")
 nightblueImage=PhotoImage(file="night_blue.png")
 menubar.add_cascade(label="Themes",menu=themesmenu)
 theme_choice=StringVar()
-themesmenu.add_radiobutton(label="Light Default", image=lightdImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Light Plus", image=lightpImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Dark", image=darkImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Pink", image=pinkImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Monokai", image=monokaiImage, variable=theme_choice, compound=LEFT)
-themesmenu.add_radiobutton(label="Night Blue", image=nightblueImage, variable=theme_choice, compound=LEFT)
+themesmenu.add_radiobutton(label="Light Default", image=lightdImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("white","black"))
+themesmenu.add_radiobutton(label="Light Plus", image=lightpImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("gray20","white"))
+themesmenu.add_radiobutton(label="Dark", image=darkImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("black","white"))
+themesmenu.add_radiobutton(label="Pink", image=pinkImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("pink","blue"))
+themesmenu.add_radiobutton(label="Monokai", image=monokaiImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("orange","white"))
+themesmenu.add_radiobutton(label="Night Blue", image=nightblueImage, variable=theme_choice, compound=LEFT,command=lambda :change_theme("blue","white"))
+
+# Keyboard Bindings
+
+root.bind("<Command-o>",open_file)
+root.bind("<Command-n>",new_file)
+root.bind("<Command-s>",save_file)
+root.bind("<Command-S>",save_as_file)
+root.bind("<Command-q>",exit_window)
+root.bind("<Command-m>",minimize_window)
+root.bind("<Command-p>",printsheet)
+
+
+
 
 
 root.mainloop() 
