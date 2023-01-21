@@ -6,7 +6,7 @@ from tkinter import messagebox
 import tempfile
 import os, sys, subprocess
 from sh import lp
-
+from datetime import datetime
 
 # Functionality
 
@@ -178,7 +178,11 @@ def statusbarFunc():
         status_bar.pack_forget()
     else:
         status_bar.pack()
-     
+        
+def date_time(event=None):
+    now = datetime.now() #DD/MM/YYYY, MM/DD/YYYY, Mon Day Year, 
+    formatted_now = now.strftime("%b %d, %Y %H:%M")
+    textarea.insert(1.0,formatted_now)
 def find():
     
     # functionality
@@ -322,7 +326,7 @@ rightalignButtton.grid(row=0,column=9, padx=5)
 
 scrollbar=Scrollbar(root)
 scrollbar.pack(side=RIGHT, fill=Y)
-textarea=Text(root,yscrollcommand=scrollbar.set,font=("arial",12))
+textarea=Text(root,yscrollcommand=scrollbar.set,font=("arial",12),undo=True)
 textarea.pack(fill=BOTH, expand=1)
 scrollbar.config(command=textarea.yview)
 
@@ -337,18 +341,24 @@ textarea.bind('<<Modified>>',statusbar_state)
 # edit menu
 editmenu=Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Edit", menu=editmenu)
+undoImage=PhotoImage(file="undo.png")
+editmenu.add_command(label="Undo", accelerator="Command+z",image=undoImage,compound=LEFT,command=lambda :textarea.event_generate('<Command z>'))
+redoImage=PhotoImage(file="redo.png")
+editmenu.add_command(label="Redo", accelerator="Command+shift+z",image=redoImage,compound=LEFT,command=lambda :textarea.event_generate('<<Redo>>'))
 cutImage=PhotoImage(file="cut.png")
-editmenu.add_command(label="Cut", accelerator="Command+x",image=cutImage,compound=LEFT,command=lambda :textarea.event_generate('<Command X>'))
+editmenu.add_command(label="Cut", accelerator="Command+x",image=cutImage,compound=LEFT,command=lambda :textarea.event_generate('<Command x>'))
 copyImage=PhotoImage(file="copy.png")
-editmenu.add_command(label="Copy", accelerator="Command+C",image=copyImage,compound=LEFT,command=lambda :textarea.event_generate('<Command C>'))
+editmenu.add_command(label="Copy", accelerator="Command+C",image=copyImage,compound=LEFT,command=lambda :textarea.event_generate('<Command c>'))
 pasteImage=PhotoImage(file="paste.png")
-editmenu.add_command(label="Paste", accelerator="Command+V",image=pasteImage,compound=LEFT,command=lambda :textarea.event_generate('<Command V>'))
+editmenu.add_command(label="Paste", accelerator="Command+V",image=pasteImage,compound=LEFT,command=lambda :textarea.event_generate('<Command v>'))
 selectImage=PhotoImage(file="select-all.png")
-editmenu.add_command(label="Select All", accelerator="Command+A",image=selectImage,compound=LEFT)
+editmenu.add_command(label="Select All", accelerator="Command+A",image=selectImage,compound=LEFT,command=lambda :textarea.event_generate('<Command a>'))
 clearImage=PhotoImage(file="clear_all.png")
 editmenu.add_command(label="Clear", accelerator="Command+Option+X",image=clearImage,compound=LEFT,command=lambda :textarea.delete(0.0,END))
 findImage=PhotoImage(file="find.png")
 editmenu.add_command(label="Find", accelerator="Command+F",image=findImage,compound=LEFT,command=find)
+date_timeImage=PhotoImage(file="calendar.png")
+editmenu.add_command(label="Date/Time", accelerator="Command+D",image=date_timeImage,compound=LEFT,command=date_time)
 
 # view menu
 show_toolbar=BooleanVar()
@@ -389,6 +399,7 @@ root.bind("<Command-S>",save_as_file)
 root.bind("<Command-q>",exit_window)
 root.bind("<Command-m>",minimize_window)
 root.bind("<Command-p>",printsheet)
+root.bind("<Command-d>", date_time)
 
 
 
